@@ -1,5 +1,5 @@
 defmodule Day01Test do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   test "solves a" do
     assert Day01.solve_a() == 427
@@ -8,5 +8,4 @@ defmodule Day01Test do
   test "solves b" do
     assert Day01.solve_b() == 341
   end
-
 end
