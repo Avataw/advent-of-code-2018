@@ -31,4 +31,17 @@ defmodule StringHelper do
     |> Enum.map(&String.to_integer/1)
     |> List.to_tuple()
   end
+
+  @doc """
+
+  Appends something to a string.
+
+  ## Examples
+    iex> StringHelper.append("ab", "c")
+    "abc"
+  """
+  @spec append(String.t(), String.t()) :: String.t()
+  def append(input, string) do
+    "#{input}#{string}"
+  end
 end

@@ -1,7 +1,7 @@
 defmodule EnumHelper do
   @doc """
 
-  Count's all the differences of two lists.
+  Count's all the differences of two enums.
   Order matters!
 
   ## Examples
@@ -35,9 +35,23 @@ defmodule EnumHelper do
     [1,3]
 
   """
-  def merge_overlap(first_string, second_string) do
-    Enum.zip(first_string, second_string)
-    |> Enum.filter(fn {first_string, second_string} -> first_string == second_string end)
+  def merge_overlap(first_enum, second_enum) do
+    Enum.zip(first_enum, second_enum)
+    |> Enum.filter(fn {first_enum, second_enum} -> first_enum == second_enum end)
     |> Enum.map(fn {first, _} -> first end)
+  end
+
+  @doc """
+
+  Returns the (key and) value with the highest frequency.
+
+  ## Examples
+    iex> EnumHelper.max_frequency([1,2,2])
+    {2,2}
+  """
+  def max_frequency(enum) do
+    enum
+    |> Enum.frequencies()
+    |> Enum.max_by(fn {_, value} -> value end)
   end
 end
