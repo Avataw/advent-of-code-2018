@@ -44,4 +44,20 @@ defmodule StringHelper do
   def append(input, string) do
     "#{input}#{string}"
   end
+
+  @doc """
+
+  Get's all the lower case letters.
+
+  ## Examples
+    iex> StringHelper.alphabetize()
+    ["a","b","c","d","e","f","g","h","i",
+    "j","k","l","m","n","o","p","q","r",
+    "s","t","u","v","w","x","y","z"]
+  """
+  @spec alphabetize() :: [String.t()]
+  def alphabetize() do
+    ?a..?z
+    |> Enum.map(&<<&1::utf8>>)
+  end
 end

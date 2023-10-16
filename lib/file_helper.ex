@@ -6,4 +6,10 @@ defmodule FileHelper do
     read_file(day)
     |> Stream.map(&String.trim/1)
   end
+
+  def read_as_word(day) do
+    read_file(day)
+    |> Enum.at(0)
+    |> String.trim()
+  end
 end
