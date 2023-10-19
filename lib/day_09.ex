@@ -1,55 +1,76 @@
-defmodule Player do
-  defstruct score: 0
+defmodule LinkedListItem do
+  defstruct value: nil, previous_index: nil, next_index: nil
+end
 
-  def add(%Player{score: score}, amount) do
-    %Player{score: score + amount}
+defmodule LinkedList do
+  defstruct items: %{}, current: nil, current_id: nil
+
+  def new(value) do
+    current_id = 0
+
+    %LinkedList{
+      items: %{
+        current_id => %LinkedListItem{
+          value: value,
+          previous_index: current_id,
+          next_index: current_id
+        }
+      },
+      current: current_id,
+      current_id: current_id + 1
+    }
+  end
+
+  def add_right_by_two(%LinkedList{items: items, current: current, current_id: current_id}, value) do
+    target_index = Map.get(items, current).next_index
+
+    previous = Map.get(items, target_index)
+
+    to_add = %LinkedListItem{
+      value: value,
+      previous_index: target_index,
+      next_index: previous.next_index
+    }
+
+    to_add_index = current_id
+
+    items =
+      Map.put(items, to_add_index, to_add)
+      |> Map.update!(target_index, fn item ->
+        %LinkedListItem{item | next_index: to_add_index}
+      end)
+      |> Map.update!(previous.next_index, fn item ->
+        %LinkedListItem{item | previous_index: to_add_index}
+      end)
+
+    %LinkedList{items: items, current: to_add_index, current_id: current_id + 1}
+  end
+
+  def remove_left_by_seven(%LinkedList{items: items, current: current, current_id: current_id}) do
+    target_index =
+      1..6
+      |> Enum.reduce(Map.get(items, current), fn _, item ->
+        Map.get(items, item.previous_index)
+      end)
+      |> Map.get(:previous_index)
+
+    to_remove = Map.get(items, target_index)
+
+    items =
+      items
+      |> Map.update!(to_remove.previous_index, fn item ->
+        %LinkedListItem{item | next_index: to_remove.next_index}
+      end)
+      |> Map.update!(to_remove.next_index, fn item ->
+        %LinkedListItem{item | previous_index: to_remove.previous_index}
+      end)
+
+    {%LinkedList{items: items, current: to_remove.next_index, current_id: current_id},
+     to_remove.value}
   end
 end
 
 defmodule Day09 do
-  def insert_between(list, element, index) do
-    {pre, post} = Enum.split(list, index)
-    pre ++ [element] ++ post
-  end
-
-  def place_marble(marbles, element) do
-    current_marble = Enum.find_index(marbles, fn m -> elem(m, 1) == :current end)
-
-    element = {element, :current}
-    marbles = marbles |> Enum.map(fn m -> {elem(m, 0), nil} end)
-
-    length = length(marbles)
-
-    cond do
-      current_marble == length -> insert_between(marbles, element, 2)
-      current_marble == length - 1 -> insert_between(marbles, element, 1)
-      true -> insert_between(marbles, element, current_marble + 2)
-    end
-  end
-
-  def score_marble(marbles) do
-    current_marble = Enum.find_index(marbles, fn m -> elem(m, 1) == :current end)
-
-    length = length(marbles)
-
-    adjusted_index = rem(current_marble - 7 + length, length)
-    score = Enum.at(marbles, adjusted_index)
-
-    marbles = List.delete(marbles, score)
-    new_current = Enum.at(marbles, adjusted_index)
-
-    marbles =
-      Enum.map(marbles, fn marble ->
-        if marble == new_current do
-          {elem(marble, 0), :current}
-        else
-          {elem(marble, 0), nil}
-        end
-      end)
-
-    {marbles, score}
-  end
-
   def parse(input) do
     player_count = input |> ParseHelper.get_before(" players") |> String.to_integer()
     turns = input |> ParseHelper.get_inbetween("worth ", " points") |> String.to_integer()
@@ -62,34 +83,35 @@ defmodule Day09 do
 
     players =
       1..player_count
-      |> Enum.map(fn id -> {id, %Player{}} end)
+      |> Enum.map(fn id -> {id, 0} end)
       |> Enum.into(%{})
 
-    winner =
-      1..player_count
-      |> Stream.cycle()
-      |> Enum.take(turns)
-      |> Enum.with_index()
-      |> Enum.reduce({[{0, :current}], players}, fn {player_id, marble}, {marbles, players} ->
-        marble = marble + 1
+    1..player_count
+    |> Stream.cycle()
+    |> Enum.take(turns)
+    |> Enum.with_index()
+    |> Enum.reduce({LinkedList.new(0), players}, fn {player_id, marble}, {marbles, players} ->
+      marble = marble + 1
 
-        if rem(marble, 23) == 0 do
-          {marbles, {score, _}} = score_marble(marbles)
+      case rem(marble, 23) do
+        0 ->
+          {marbles, second_marble} = LinkedList.remove_left_by_seven(marbles)
 
           players =
-            Map.update!(players, player_id, fn player -> Player.add(player, score + marble) end)
+            Map.update!(players, player_id, fn player_score ->
+              player_score + marble + second_marble
+            end)
 
           {marbles, players}
-        else
-          {place_marble(marbles, marble), players}
-        end
-      end)
-      |> elem(1)
-      |> Map.to_list()
-      |> Enum.max_by(fn {_, score} -> score end)
-      |> elem(1)
 
-    winner.score
+        _ ->
+          {LinkedList.add_right_by_two(marbles, marble), players}
+      end
+    end)
+    |> elem(1)
+    |> Map.to_list()
+    |> Enum.max_by(fn {_, score} -> score end)
+    |> elem(1)
   end
 
   def solve_b do
@@ -97,33 +119,34 @@ defmodule Day09 do
 
     players =
       1..player_count
-      |> Enum.map(fn id -> {id, %Player{}} end)
+      |> Enum.map(fn id -> {id, 0} end)
       |> Enum.into(%{})
 
-    winner =
-      1..player_count
-      |> Stream.cycle()
-      |> Enum.take(turns * 100)
-      |> Enum.with_index()
-      |> Enum.reduce({[{0, :current}], players}, fn {player_id, marble}, {marbles, players} ->
-        marble = marble + 1
+    1..player_count
+    |> Stream.cycle()
+    |> Enum.take(turns * 100)
+    |> Enum.with_index()
+    |> Enum.reduce({LinkedList.new(0), players}, fn {player_id, marble}, {marbles, players} ->
+      marble = marble + 1
 
-        if rem(marble, 23) == 0 do
-          {marbles, {score, _}} = score_marble(marbles)
+      case rem(marble, 23) do
+        0 ->
+          {marbles, second_marble} = LinkedList.remove_left_by_seven(marbles)
 
           players =
-            Map.update!(players, player_id, fn player -> Player.add(player, score + marble) end)
+            Map.update!(players, player_id, fn player_score ->
+              player_score + marble + second_marble
+            end)
 
           {marbles, players}
-        else
-          {place_marble(marbles, marble), players}
-        end
-      end)
-      |> elem(1)
-      |> Map.to_list()
-      |> Enum.max_by(fn {_, score} -> score end)
-      |> elem(1)
 
-    winner.score
+        _ ->
+          {LinkedList.add_right_by_two(marbles, marble), players}
+      end
+    end)
+    |> elem(1)
+    |> Map.to_list()
+    |> Enum.max_by(fn {_, score} -> score end)
+    |> elem(1)
   end
 end
