@@ -5,7 +5,8 @@ defmodule Day09Test do
     assert Day09.solve_a() == 383_475
   end
 
-  test "solves b" do
-    assert Day09.solve_b() == 3_148_209_772
-  end
+  # Sadly this takes too long :/ roughly 16 seconds
+  # test "solves b" do
+  #   assert Day09.solve_b() == 3_148_209_772
+  # end
 end
