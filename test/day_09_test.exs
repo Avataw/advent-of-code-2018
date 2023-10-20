@@ -6,7 +6,8 @@ defmodule Day09Test do
   end
 
   # Sadly this takes too long :/ roughly 16 seconds
-  # test "solves b" do
-  #   assert Day09.solve_b() == 3_148_209_772
-  # end
+  @tag :skip
+  test "solves b" do
+    assert Day09.solve_b() == 3_148_209_772
+  end
 end
